@@ -1,15 +1,36 @@
 const express = require('express');
 const cors = require('cors');
 const puppeteer = require('puppeteer');
-const fs = require('fs');
+const fs = require('fs'); // Built-in Node file system
 const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-// Tell Express to serve files from the "public" folder
 app.use(express.static('public'));
+
+// --- NEW: Database Setup ---
+const dbPath = path.join(__dirname, 'posts.json');
+
+// Helper function to read the database
+function getSavedPosts() {
+    if (!fs.existsSync(dbPath)) return [];
+    const data = fs.readFileSync(dbPath, 'utf8');
+    return JSON.parse(data);
+}
+
+// Helper function to write to the database
+function savePostToDB(newPost) {
+    const posts = getSavedPosts();
+    posts.unshift(newPost); // Add to the top of the list
+    fs.writeFileSync(dbPath, JSON.stringify(posts, null, 2));
+}
+
+// --- NEW: Route to fetch history on page load ---
+app.get('/posts', (req, res) => {
+    res.json(getSavedPosts());
+});
+// ---------------------------
 
 app.post('/scrape', async (req, res) => {
     const { url } = req.body;
@@ -21,28 +42,19 @@ app.post('/scrape', async (req, res) => {
     try {
         browser = await puppeteer.launch({
             headless: true,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-blink-features=AutomationControlled',
-                '--disable-dev-shm-usage' // Add this line
-            ]
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled', '--disable-dev-shm-usage']
         });
         const page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-        // Go to URL and wait for basic HTML to load
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
-        // Scrape Text, Author, and the hidden Thumbnail Image
         const scrapedData = await page.evaluate(() => {
-            // 1. Get Author
             let author = document.querySelector('h1')?.innerText
                 || document.querySelector('.top-card-layout__title')?.innerText
                 || "LinkedIn User";
             author = author.replace("'s Post", "").trim();
 
-            // 2. Get Text
             let text = "";
             const textContainer = document.querySelector('[data-test-id="main-feed-activity-card__commentary"]')
                 || document.querySelector('.core-section-container__content');
@@ -54,14 +66,8 @@ app.post('/scrape', async (req, res) => {
                 text = paragraphs.map(p => p.innerText).join('\n\n');
             }
 
-            // 3. Get the Official Post Thumbnail (Open Graph Image)
             let attachedImageUrl = document.querySelector('meta[property="og:image"]')?.content || "";
-
-            // If the thumbnail is just the author's profile picture, it means there is no attached document.
-            // We ignore it so text-only posts stay text-only.
-            if (attachedImageUrl.includes('profile-displayphoto')) {
-                attachedImageUrl = "";
-            }
+            if (attachedImageUrl.includes('profile-displayphoto')) attachedImageUrl = "";
 
             return {
                 author,
@@ -71,15 +77,19 @@ app.post('/scrape', async (req, res) => {
         });
 
         await browser.close();
-        console.log(`✅ Successfully scraped! Attached Image Found: ${scrapedData.mediaUrl ? 'Yes' : 'No'}`);
 
-        // Send data to frontend
-        res.json({
+        const finalPostData = {
             author: scrapedData.author,
             text: scrapedData.text,
-            mediaUrl: scrapedData.mediaUrl, // Sending the thumbnail URL
+            mediaUrl: scrapedData.mediaUrl,
             originalUrl: url
-        });
+        };
+
+        // --- NEW: Save the scraped data to our JSON file ---
+        savePostToDB(finalPostData);
+        // ---------------------------------------------------
+
+        res.json(finalPostData);
 
     } catch (error) {
         if (browser) await browser.close();
