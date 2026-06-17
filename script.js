@@ -130,26 +130,52 @@ function renderPost(data) {
     `;
     container.insertAdjacentHTML('afterbegin', postHTML);
 }
+// ==========================================
+// 🔴 DELETE POST FUNCTION
+// ==========================================
+async function deletePost(id) {
+    if (!confirm("Delete this post permanently?")) return;
 
+    try {
+        // 1. Tell the backend to delete it from posts.json
+        await fetch(`http://localhost:3000/posts/${id}`, { method: 'DELETE' });
+
+        // 2. Remove it from your local memory
+        savedPosts = savedPosts.filter(p => p.id !== id);
+
+        // 3. Update the History Sidebar
+        updateHistory();
+
+        // 4. Update the Main Feed to remove the deleted post
+        const container = document.getElementById('postsContainer');
+        container.innerHTML = ''; // Clear the screen
+        savedPosts.slice().reverse().forEach(post => renderPost(post)); // Redraw remaining posts
+
+    } catch (err) {
+        alert("Failed to delete post. Is your server running?");
+        console.error(err);
+    }
+}
 // ==========================================
 // 5. RENDERING HISTORY SIDEBAR
 // ==========================================
 function updateHistory() {
     const historyContainer = document.getElementById('historyContainer');
     if (!historyContainer) return;
-
     historyContainer.innerHTML = '';
 
     savedPosts.forEach((post) => {
         let snippet = post.text ? post.text.substring(0, 45) + '...' : 'Media attachment';
 
         const historyItem = `
-            <li class="p-3 bg-gray-50 rounded border border-gray-100 hover:bg-gray-100 transition">
-                <p class="font-bold text-sm text-gray-900 truncate">${post.author}</p>
-                <p class="text-xs text-gray-500 mt-1">${snippet}</p>
+            <li class="p-3 bg-gray-50 rounded border border-gray-100 hover:bg-gray-100 transition flex justify-between items-center">
+                <div class="cursor-pointer overflow-hidden flex-1" onclick="window.open('${post.originalUrl}', '_blank')">
+                    <p class="font-bold text-sm text-gray-900 truncate">${post.author}</p>
+                    <p class="text-xs text-gray-500 mt-1 truncate">${snippet}</p>
+                </div>
+                <button onclick="deletePost('${post.id}')" class="text-red-600 bg-red-100 hover:bg-red-200 transition ml-2 p-2 rounded text-lg" title="Delete Post">🗑️</button>
             </li>
         `;
-
         historyContainer.insertAdjacentHTML('beforeend', historyItem);
     });
 }
@@ -178,4 +204,19 @@ function renderMedia(data) {
         return `<img src="${data.mediaUrl}" class="w-full max-h-[400px] object-contain bg-gray-50 rounded border border-gray-200 mb-4">`;
     }
     return '';
+}
+async function deletePost(id) {
+    if (!confirm("Delete this post permanently?")) return;
+    try {
+        await fetch(`http://localhost:3000/posts/${id}`, { method: 'DELETE' });
+        savedPosts = savedPosts.filter(p => p.id !== id);
+        updateHistory();
+
+        // Redraw main feed
+        const container = document.getElementById('postsContainer');
+        container.innerHTML = '';
+        savedPosts.slice().reverse().forEach(post => renderPost(post));
+    } catch (err) {
+        alert("Failed to delete post.");
+    }
 }

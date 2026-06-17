@@ -24,7 +24,14 @@ function savePostToDB(newPost) {
     const posts = getSavedPosts();
     posts.unshift(newPost); // Add to the top of the list
     fs.writeFileSync(dbPath, JSON.stringify(posts, null, 2));
+
 }
+app.delete('/posts/:id', (req, res) => {
+    let posts = getSavedPosts();
+    posts = posts.filter(p => p.id !== req.params.id);
+    fs.writeFileSync(dbPath, JSON.stringify(posts, null, 2));
+    res.json({ success: true });
+});
 
 // --- NEW: Route to fetch history on page load ---
 app.get('/posts', (req, res) => {
@@ -95,6 +102,7 @@ app.post('/scrape', async (req, res) => {
         console.log(`✅ Scraped! Image Found: ${scrapedData.mediaUrl ? 'Yes' : 'No'}`);
 
         const finalPostData = {
+            id: Date.now().toString(),
             author: scrapedData.author,
             text: scrapedData.text,
             mediaUrl: scrapedData.mediaUrl,
