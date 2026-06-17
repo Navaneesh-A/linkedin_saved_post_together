@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Post Saver</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-3xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6 text-blue-600">Post Vault</h1>
+
+        <div class="bg-white p-4 rounded-lg shadow mb-8 flex gap-4">
+            <input type="url" id="linkInput" placeholder="Paste LinkedIn post URL here..."
+                class="flex-1 border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button onclick="savePost()"
+                class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">Save</button>
+        </div>
+
+        <div id="postsContainer" class="space-y-6">
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
