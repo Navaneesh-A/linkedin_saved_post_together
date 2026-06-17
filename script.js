@@ -5,7 +5,6 @@ async function savePost() {
     if (!url) return alert('Please enter a valid URL');
 
     try {
-        // 1. Send URL to Backend
         const response = await fetch('http://localhost:3000/scrape', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -14,7 +13,14 @@ async function savePost() {
 
         const data = await response.json();
 
-        // 2. Render the real response
+        // 🎉 Trigger Joyful Animation!
+        confetti({
+            particleCount: 150,
+            spread: 80,
+            origin: { y: 0.6 },
+            colors: ['#0A66C2', '#FFFFFF', '#F8C77E'] // LinkedIn colors
+        });
+
         renderPost(data);
         input.value = '';
     } catch (error) {
@@ -25,29 +31,59 @@ async function savePost() {
 
 function renderPost(data) {
     const container = document.getElementById('postsContainer');
+    const uniqueId = 'post-' + Date.now();
 
-    // Force line breaks to render properly in HTML
-    const formattedText = data.text.replace(/\n/g, '<br>');
+    // 1. Handle the Read More logic on raw text
+    let rawText = data.text || "";
+    let isLong = rawText.length > 250;
+
+    let shortText = rawText;
+    if (isLong) {
+        shortText = rawText.substring(0, 250) + '...';
+    }
+
+    // 2. Force HTML line breaks so it looks exactly like the LinkedIn post
+    const shortHTML = shortText.replace(/\n/g, '<br>');
+    const longHTML = rawText.replace(/\n/g, '<br>');
 
     const postHTML = `
         <div class="bg-white p-6 rounded-lg shadow">
             <h3 class="font-bold text-lg mb-4 text-gray-900">${data.author}</h3>
-            <p class="text-gray-800 leading-relaxed">${formattedText}</p>
+            
             ${renderMedia(data)}
-            <a href="${data.originalUrl}" target="_blank" class="text-sm text-blue-500 hover:underline mt-6 inline-block">View Original on LinkedIn</a>
+
+            <div class="mt-4 text-gray-800 leading-relaxed text-sm">
+                <span id="${uniqueId}-short">${shortHTML}</span>
+                <span id="${uniqueId}-long" class="hidden">${longHTML}</span>
+            </div>
+            
+            ${isLong ? `<button onclick="toggleText('${uniqueId}')" id="${uniqueId}-btn" class="text-blue-600 font-bold mt-2 text-sm hover:underline">Read More</button>` : ''}
+            
+            <a href="${data.originalUrl}" target="_blank" class="text-xs text-gray-400 hover:underline mt-6 block">View Original</a>
         </div>
     `;
     container.insertAdjacentHTML('afterbegin', postHTML);
 }
 
-function renderMedia(data) {
-    // If the backend found an attached image or document thumbnail, render it
-    if (data.mediaUrl) {
-        return `<div class="mt-6 border-t pt-4">
-                    <span class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 block">Attached Media</span>
-                    <img src="${data.mediaUrl}" class="w-full max-h-[500px] object-contain bg-gray-50 rounded border border-gray-200 shadow-sm">
-                </div>`;
+function toggleText(id) {
+    const shortNode = document.getElementById(`${id}-short`);
+    const longNode = document.getElementById(`${id}-long`);
+    const btn = document.getElementById(`${id}-btn`);
+
+    if (longNode.classList.contains('hidden')) {
+        longNode.classList.remove('hidden');
+        shortNode.classList.add('hidden');
+        btn.innerText = 'Read Less';
+    } else {
+        longNode.classList.add('hidden');
+        shortNode.classList.remove('hidden');
+        btn.innerText = 'Read More';
     }
-    // If it's a text-only post, return nothing
+}
+
+function renderMedia(data) {
+    if (data.mediaUrl) {
+        return `<img src="${data.mediaUrl}" class="w-full max-h-[400px] object-contain bg-gray-50 rounded border border-gray-200 mb-4">`;
+    }
     return '';
 }
