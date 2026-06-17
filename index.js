@@ -42,41 +42,57 @@ app.post('/scrape', async (req, res) => {
     try {
         browser = await puppeteer.launch({
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled', '--disable-dev-shm-usage']
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-blink-features=AutomationControlled',
+                '--disable-dev-shm-usage',
+                '--disable-gpu', // Disables graphics hardware acceleration
+                '--disable-software-rasterizer', // Disables 3D rendering
+                '--no-zygote',
+                '--disable-extensions'
+            ]
         });
         const page = await browser.newPage();
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        await page.setUserAgent('Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)');
+        await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
 
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        // --- FIX 1: Ignore non-critical aborted requests ---
+        try {
+            await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+        } catch (navError) {
+            console.log("⚠️ Minor navigation drop (ignored):", navError.message);
+            // We proceed anyway because the HTML we need usually loads before the error happens!
+        }
 
         const scrapedData = await page.evaluate(() => {
             let author = document.querySelector('h1')?.innerText
                 || document.querySelector('.top-card-layout__title')?.innerText
+                || document.querySelector('meta[property="og:title"]')?.content?.split(' on LinkedIn')[0]
                 || "LinkedIn User";
-            author = author.replace("'s Post", "").trim();
+            author = author.replace(/['’]s Post/g, "").trim();
 
             let text = "";
             const textContainer = document.querySelector('[data-test-id="main-feed-activity-card__commentary"]')
                 || document.querySelector('.core-section-container__content');
-
             if (textContainer) {
                 text = textContainer.innerText;
             } else {
-                const paragraphs = Array.from(document.querySelectorAll('p, div[dir="ltr"]'));
-                text = paragraphs.map(p => p.innerText).join('\n\n');
+                text = document.querySelector('meta[property="og:description"]')?.content || "Text extraction failed.";
             }
 
-            let attachedImageUrl = document.querySelector('meta[property="og:image"]')?.content || "";
-            if (attachedImageUrl.includes('profile-displayphoto')) attachedImageUrl = "";
+            let mediaUrl = document.querySelector('meta[property="og:image"]')?.content
+                || document.querySelector('img[src*="media.licdn.com/dms/image"]')?.src
+                || "";
 
-            return {
-                author,
-                text: text.trim().substring(0, 2500),
-                mediaUrl: attachedImageUrl
-            };
+            if (mediaUrl.includes('profile-displayphoto') || mediaUrl.includes('ghost-person')) {
+                mediaUrl = "";
+            }
+
+            return { author, text: text.trim().substring(0, 2500), mediaUrl };
         });
 
-        await browser.close();
+        console.log(`✅ Scraped! Image Found: ${scrapedData.mediaUrl ? 'Yes' : 'No'}`);
 
         const finalPostData = {
             author: scrapedData.author,
@@ -85,16 +101,21 @@ app.post('/scrape', async (req, res) => {
             originalUrl: url
         };
 
-        // --- NEW: Save the scraped data to our JSON file ---
         savePostToDB(finalPostData);
-        // ---------------------------------------------------
-
         res.json(finalPostData);
 
     } catch (error) {
-        if (browser) await browser.close();
-        console.error("❌ Error:", error.message);
+        console.error("❌ Critical Error:", error.message);
         res.status(500).json({ error: error.message });
+    } finally {
+        // --- FIX 2: The Ultimate Cleanup Guarantee ---
+        if (browser) {
+            try {
+                await browser.close();
+            } catch (closeError) {
+                console.log("⚠️ Could not close browser properly.");
+            }
+        }
     }
 });
 
