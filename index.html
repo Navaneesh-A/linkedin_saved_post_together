@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-
     <title>LinkedIn Post Saver</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -16,7 +15,14 @@
     <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         <div class="lg:col-span-2">
-            <h1 class="text-3xl font-bold mb-6 text-blue-600">Post Vault</h1>
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-blue-600">Post Vault</h1>
+                <button onclick="toggleReminderFilter()" class="relative text-2xl hover:scale-110 transition"
+                    title="Show/Hide Reminders">
+                    🔔 <span id="bellBadge"
+                        class="hidden absolute -top-1 -right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">0</span>
+                </button>
+            </div>
 
             <div class="bg-white p-4 rounded-lg shadow mb-8 flex gap-4">
                 <input type="url" id="linkInput" placeholder="Paste LinkedIn post URL here..."
@@ -25,15 +31,13 @@
                     class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">Save</button>
             </div>
 
-            <div id="postsContainer" class="space-y-6">
-            </div>
+            <div id="postsContainer" class="space-y-6"></div>
         </div>
 
         <div class="hidden lg:block lg:col-span-1">
             <div class="bg-white p-6 rounded-lg shadow sticky top-8">
                 <h2 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Vault History</h2>
-                <ul id="historyContainer" class="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
-                </ul>
+                <ul id="historyContainer" class="space-y-4 max-h-[70vh] overflow-y-auto pr-2"></ul>
             </div>
         </div>
 

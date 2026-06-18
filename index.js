@@ -38,7 +38,24 @@ app.get('/posts', (req, res) => {
     res.json(getSavedPosts());
 });
 // ---------------------------
+// TOGGLE REMINDER
+// Ensure it looks EXACTLY like this (with the colon before id):
+// Ensure this route is exactly here
+// In index.js
+app.put('/posts/:id/remind', (req, res) => {
+    const posts = getSavedPosts();
+    const post = posts.find(p => p.id === req.params.id);
 
+    if (post) {
+        post.remind = !post.remind;
+        fs.writeFileSync(dbPath, JSON.stringify(posts, null, 2));
+        console.log(`✅ Success: Toggled ID ${req.params.id} to ${post.remind}`);
+        res.json({ success: true, remind: post.remind });
+    } else {
+        console.error(`❌ Error: ID ${req.params.id} not found in database.`);
+        res.status(404).json({ error: "Post not found" });
+    }
+});
 app.post('/scrape', async (req, res) => {
     const { url } = req.body;
     console.log(`\n📥 Scrape Request: ${url}`);
@@ -103,6 +120,7 @@ app.post('/scrape', async (req, res) => {
 
         const finalPostData = {
             id: Date.now().toString(),
+            remind: false,
             author: scrapedData.author,
             text: scrapedData.text,
             mediaUrl: scrapedData.mediaUrl,
