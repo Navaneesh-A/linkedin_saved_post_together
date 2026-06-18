@@ -89,36 +89,42 @@ async function savePost() {
 // ==========================================
 // 4. RENDERING UI
 // ==========================================
+
 function renderPost(data) {
     const container = document.getElementById('postsContainer');
     const uniqueId = 'post-' + Date.now() + Math.floor(Math.random() * 1000);
 
-    let rawText = data.text || "";
-    let isLong = rawText.length > 250;
+    // 1. Normalize the text: 
+    // Convert all types of line breaks to a standard format, then replace with <br>
+    // This removes the "messy" excess spaces.
+    let cleanText = (data.text || "")
+        .replace(/\r\n/g, '\n') // Standardize Windows breaks
+        .replace(/\n\n+/g, '\n\n'); // Collapse 3+ breaks into 2
 
-    let shortText = rawText;
-    if (isLong) {
-        shortText = rawText.substring(0, 250) + '...';
-    }
+    let isLong = cleanText.length > 250;
+    let shortText = isLong ? cleanText.substring(0, 250) + '...' : cleanText;
+
+    // 2. Convert to HTML for display
+    const shortHTML = shortText.replace(/\n/g, '<br>');
+    const longHTML = cleanText.replace(/\n/g, '<br>');
 
     const postHTML = `
         <div class="bg-white p-6 rounded-lg shadow">
             <h3 class="font-bold text-lg mb-4 text-gray-900">${data.author}</h3>
-            
             ${renderMedia(data)}
-
             <div class="mt-4 text-gray-800 leading-relaxed text-sm whitespace-pre-wrap">
-                <span id="${uniqueId}-short">${shortText}</span>
-                <span id="${uniqueId}-long" class="hidden">${rawText}</span>
+                <span id="${uniqueId}-short">${shortHTML}</span>
+                <span id="${uniqueId}-long" class="hidden">${longHTML}</span>
             </div>
-            
             ${isLong ? `<button onclick="toggleText('${uniqueId}')" id="${uniqueId}-btn" class="text-blue-600 font-bold mt-2 text-sm hover:underline">Read More</button>` : ''}
-            
             <a href="${data.originalUrl}" target="_blank" class="text-xs text-gray-400 hover:underline mt-6 block">View Original</a>
         </div>
     `;
     container.insertAdjacentHTML('afterbegin', postHTML);
 }
+
+
+
 
 function toggleText(id) {
     const shortNode = document.getElementById(`${id}-short`);
