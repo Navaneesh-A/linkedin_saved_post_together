@@ -19,9 +19,22 @@
             <button onclick="savePost()"
                 class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">Save</button>
         </div>
-
-        <div id="postsContainer" class="space-y-6">
+        <button onclick="toggleReminderFilter()"
+            class="bg-yellow-500 text-white px-10 py-1 rounded hover:bg-yellow-600 transition">
+            FAV
+        </button>
+        <div id="postsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6">
         </div>
+    </div>
+    <!-- history feature FRICK NEW -->
+    <div class="flex gap-8">
+        <div class="flex-1">
+        </div>
+
+        <aside class="w-64">
+            <h2 class="font-bold mb-4">Post History</h2>
+            <ul id="historyContainer"></ul>
+        </aside>
     </div>
 
     <script src="script.js"></script>

@@ -21,9 +21,13 @@ function getSavedPosts() {
 
 // Helper function to write to the database
 function savePostToDB(newPost) {
-    const posts = getSavedPosts();
-    posts.unshift(newPost); // Add to the top of the list
-    fs.writeFileSync(dbPath, JSON.stringify(posts, null, 2));
+    let posts = getSavedPosts();
+    // Check if the post already exists by URL
+    const exists = posts.find(p => p.originalUrl === newPost.originalUrl);
+    if (!exists) {
+        posts.unshift(newPost);
+        fs.writeFileSync(dbPath, JSON.stringify(posts, null, 2));
+    }
 }
 
 // --- NEW: Route to fetch history on page load ---
@@ -97,5 +101,26 @@ app.post('/scrape', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+// Add these routes below your /scrape route // NEW FRICK
+app.delete('/posts/:id', (req, res) => {
+    let posts = getSavedPosts();
+    posts = posts.filter(p => p.originalUrl !== req.params.id);
+    fs.writeFileSync(dbPath, JSON.stringify(posts, null, 2));
+    res.json({ success: true });
+});
+
+app.put('/posts/:id/remind', (req, res) => {
+    let posts = getSavedPosts();
+    const post = posts.find(p => p.originalUrl === req.params.id);
+    if (post) {
+        post.remind = !post.remind;
+        fs.writeFileSync(dbPath, JSON.stringify(posts, null, 2));
+        res.json({ remind: post.remind });
+    } else {
+        res.status(404).json({ error: "Post not found" });
+    }
+});
 
 app.listen(3000, () => console.log('Backend API running on http://localhost:3000'));
+
+

@@ -2,7 +2,8 @@
 // 1. INITIALIZATION & DATABASE FETCH
 // ==========================================
 let savedPosts = [];
-
+// Add this line at the top of script.js
+let showOnlyReminders = false;
 // When the page loads, ask the backend for the saved posts
 window.onload = async () => {
     try {
@@ -111,6 +112,10 @@ function renderPost(data) {
     const postHTML = `
         <div class="bg-white p-6 rounded-lg shadow">
             <h3 class="font-bold text-lg mb-4 text-gray-900">${data.author}</h3>
+<button onclick="toggleRemind('${data.originalUrl}')" 
+    class="text-xl ${data.remind ? 'text-yellow-500' : 'text-gray-300'}">
+    🔔
+</button>
             ${renderMedia(data)}
             <div class="mt-4 text-gray-800 leading-relaxed text-sm whitespace-pre-wrap">
                 <span id="${uniqueId}-short">${shortHTML}</span>
@@ -119,11 +124,18 @@ function renderPost(data) {
             ${isLong ? `<button onclick="toggleText('${uniqueId}')" id="${uniqueId}-btn" class="text-blue-600 font-bold mt-2 text-sm hover:underline">Read More</button>` : ''}
             <a href="${data.originalUrl}" target="_blank" class="text-xs text-gray-400 hover:underline mt-6 block">View Original</a>
         </div>
+       
     `;
     container.insertAdjacentHTML('afterbegin', postHTML);
 }
-
-
+// FRICK REMINDER SEE BOTTOM UPDATED SO NO RELOAD NO RENDERALL
+// async function toggleRemind(id) {
+//     const res = await fetch(`http://localhost:3000/posts/${encodeURIComponent(id)}/remind`, { method: 'PUT' });
+//     const data = await res.json();
+//     const post = savedPosts.find(p => p.originalUrl === id);
+//     if (post) post.remind = data.remind;
+//     renderAll();
+// }
 
 
 function toggleText(id) {
@@ -150,4 +162,70 @@ function renderMedia(data) {
         return `<img src="${data.mediaUrl}" class="w-full max-h-[400px] object-contain bg-gray-50 rounded border border-gray-200 mb-4">`;
     }
     return '';
+}
+
+// --- NEW: History & Reminder Logic --- FRICK NEW
+
+function updateHistory() {
+    const container = document.getElementById('historyContainer');
+    if (!container) return;
+    container.innerHTML = savedPosts.map(post => `
+        <li class="p-3 bg-gray-50 rounded flex justify-between items-center mb-2">
+            <span class="truncate text-sm w-3/4">${post.author}</span>
+            <button onclick="deletePost('${post.originalUrl}')" class="text-red-600">🗑️</button>
+        </li>
+    `).join('');
+}
+
+async function deletePost(id) {
+    if (!confirm("Delete post?")) return;
+    await fetch(`http://localhost:3000/posts/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    savedPosts = savedPosts.filter(p => p.originalUrl !== id);
+    renderAll(); // Assuming you have a renderAll function to refresh the UI
+}
+
+
+
+// Add this to script.js to complete the lifecycle
+
+
+// --- ACTIVATED: Core Refresh Logic ---
+function renderAll() {
+    const container = document.getElementById('postsContainer');
+    container.innerHTML = '';
+
+    // This is the logic that respects your FAV filter
+    let displayPosts = showOnlyReminders ? savedPosts.filter(p => p.remind) : savedPosts;
+
+    displayPosts.slice().reverse().forEach(post => renderPost(post));
+    updateHistory();
+}
+
+// --- ACTIVATED: Filter Toggle ---
+function toggleReminderFilter() {
+    showOnlyReminders = !showOnlyReminders;
+    renderAll();
+}
+
+// --- ACTIVATED: Single source of truth for Remind ---
+async function toggleRemind(url) {
+    const encodedUrl = encodeURIComponent(url);
+    try {
+        const res = await fetch(`http://localhost:3000/posts/${encodedUrl}/remind`, { method: 'PUT' });
+        const data = await res.json();
+
+        const post = savedPosts.find(p => p.originalUrl === url);
+        if (post) {
+            post.remind = data.remind;
+
+            // Visual update without reload
+            const bellBtn = document.querySelector(`button[onclick="toggleRemind('${url}')"]`);
+            if (bellBtn) {
+                bellBtn.classList.toggle('text-yellow-500', data.remind);
+                bellBtn.classList.toggle('text-gray-300', !data.remind);
+            }
+        }
+    } catch (err) {
+        console.error("Failed to toggle:", err);
+    }
 }
