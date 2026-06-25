@@ -4,6 +4,7 @@
 let savedPosts = [];
 // Add this line at the top of script.js
 let showOnlyReminders = false;
+let currentGroup = "All"; // Add this
 // When the page loads, ask the backend for the saved posts
 window.onload = async () => {
     try {
@@ -50,10 +51,11 @@ function hideError() {
 // ==========================================
 // 3. MAIN SCRAPE & SAVE FUNCTION
 // ==========================================
-async function savePost() {
+async function savePost(selectedGroup) {
     const input = document.getElementById('linkInput');
+    //console.log(selectedGroup);
     const url = input.value.trim();
-
+    const group = selectedGroup || "General";
     if (!url) { showError("Please enter a URL."); return; }
     if (!isValidLinkedInUrl(url)) { showError("Invalid link. Please paste a valid LinkedIn post URL."); return; }
 
@@ -63,8 +65,9 @@ async function savePost() {
         const response = await fetch('http://localhost:3000/scrape', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url })
+            body: JSON.stringify({ url, group }) // Send the group!
         });
+
 
         const data = await response.json();
 
@@ -91,6 +94,8 @@ async function savePost() {
 // 4. RENDERING UI
 // ==========================================
 
+// --- 1. Add this NEW helper function ---
+
 function renderPost(data) {
     const container = document.getElementById('postsContainer');
     const uniqueId = 'post-' + Date.now() + Math.floor(Math.random() * 1000);
@@ -116,6 +121,7 @@ function renderPost(data) {
     class="text-xl ${data.remind ? 'text-yellow-500' : 'text-gray-300'}">
     🔔
 </button>
+<p class="text-xs text-gray-500 mt-2">Saved on: ${data.date || 'Unknown'}</p>
             ${renderMedia(data)}
             <div class="mt-4 text-gray-800 leading-relaxed text-sm whitespace-pre-wrap">
                 <span id="${uniqueId}-short">${shortHTML}</span>
@@ -124,10 +130,12 @@ function renderPost(data) {
             ${isLong ? `<button onclick="toggleText('${uniqueId}')" id="${uniqueId}-btn" class="text-blue-600 font-bold mt-2 text-sm hover:underline">Read More</button>` : ''}
             <a href="${data.originalUrl}" target="_blank" class="text-xs text-gray-400 hover:underline mt-6 block">View Original</a>
         </div>
-       
+
     `;
     container.insertAdjacentHTML('afterbegin', postHTML);
 }
+
+
 // FRICK REMINDER SEE BOTTOM UPDATED SO NO RELOAD NO RENDERALL
 // async function toggleRemind(id) {
 //     const res = await fetch(`http://localhost:3000/posts/${encodeURIComponent(id)}/remind`, { method: 'PUT' });
@@ -193,9 +201,12 @@ async function deletePost(id) {
 function renderAll() {
     const container = document.getElementById('postsContainer');
     container.innerHTML = '';
-
     // This is the logic that respects your FAV filter
-    let displayPosts = showOnlyReminders ? savedPosts.filter(p => p.remind) : savedPosts;
+    //let displayPosts = showOnlyReminders ? savedPosts.filter(p => p.remind) : savedPosts;
+    let displayPosts = savedPosts.filter(p =>
+        (showOnlyReminders ? p.remind : true) &&
+        (currentGroup === "All" ? true : p.group === currentGroup)
+    );
 
     displayPosts.slice().reverse().forEach(post => renderPost(post));
     updateHistory();

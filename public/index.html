@@ -16,12 +16,22 @@
         <div class="bg-white p-4 rounded-lg shadow mb-8 flex gap-4">
             <input type="url" id="linkInput" placeholder="Paste LinkedIn post URL here..."
                 class="flex-1 border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <button onclick="savePost()"
-                class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">Save</button>
+
+
+            <button onclick="savePost(document.getElementById('groupSelect').value)"
+                class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">
+                Save
+            </button>
         </div>
         <button onclick="toggleReminderFilter()"
-            class="bg-yellow-500 text-white px-10 py-1 rounded hover:bg-yellow-600 transition">
+            class="bg-yellow-500 text-black px-10 py-1 rounded hover:bg-yellow-600 transition">
             FAV
+        </button>
+        <select id="groupSelect" onchange="currentGroup = this.value; renderAll();" class="border p-2 rounded bg-white">
+            <option value="All">All Groups</option>
+            <option value="Work">Work</option>
+            <option value="Personal">Personal</option>
+        </select>
         </button>
         <div id="postsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6">
         </div>

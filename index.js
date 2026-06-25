@@ -28,6 +28,11 @@ function savePostToDB(newPost) {
         posts.unshift(newPost);
         fs.writeFileSync(dbPath, JSON.stringify(posts, null, 2));
     }
+    if (!newPost.group) {
+        newPost.group = "General";
+    }
+
+
 }
 
 // --- NEW: Route to fetch history on page load ---
@@ -37,9 +42,9 @@ app.get('/posts', (req, res) => {
 // ---------------------------
 
 app.post('/scrape', async (req, res) => {
-    const { url } = req.body;
+    const { url, group } = req.body;
     console.log(`\n📥 Scrape Request: ${url}`);
-
+    //console.log(req.body);
     if (!url) return res.status(400).json({ error: 'URL is required' });
 
     let browser;
@@ -86,7 +91,9 @@ app.post('/scrape', async (req, res) => {
             author: scrapedData.author,
             text: scrapedData.text,
             mediaUrl: scrapedData.mediaUrl,
-            originalUrl: url
+            originalUrl: url,
+            group: group || "General",
+            date: new Date().toISOString().split('T')[0]
         };
 
         // --- NEW: Save the scraped data to our JSON file ---
