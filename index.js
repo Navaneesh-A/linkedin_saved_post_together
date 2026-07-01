@@ -41,6 +41,9 @@ app.get('/posts', (req, res) => {
 });
 // ---------------------------
 
+// adding thes functions below so that no navigation error due to click
+
+// This targets the button inside the container with the input field
 app.post('/scrape', async (req, res) => {
     const { url, group } = req.body;
     console.log(`\n📥 Scrape Request: ${url}`);
@@ -53,11 +56,11 @@ app.post('/scrape', async (req, res) => {
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled', '--disable-dev-shm-usage']
         });
+
+        // 3. NOW you can safely read/scrape data
+
         const page = await browser.newPage();
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-
+        await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
         const scrapedData = await page.evaluate(() => {
             let author = document.querySelector('h1')?.innerText
                 || document.querySelector('.top-card-layout__title')?.innerText
@@ -93,7 +96,8 @@ app.post('/scrape', async (req, res) => {
             mediaUrl: scrapedData.mediaUrl,
             originalUrl: url,
             group: group || "General",
-            date: new Date().toISOString().split('T')[0]
+            date: new Date().toISOString().split('T')[0],
+            remind: false
         };
 
         // --- NEW: Save the scraped data to our JSON file ---
