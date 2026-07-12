@@ -8,10 +8,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
-
+// Ensure this is at the very top, before any routes
+app.use(cors({
+    origin: '*', // Allows requests from any device/IP
+    methods: ['GET', 'POST', 'PUT', 'DELETE']
+}));
 // --- NEW: Database Setup ---
 const dbPath = path.join(__dirname, 'posts.json');
-
 // Helper function to read the database
 function getSavedPosts() {
     if (!fs.existsSync(dbPath)) return [];
@@ -132,6 +135,5 @@ app.put('/posts/:id/remind', (req, res) => {
     }
 });
 
-app.listen(3000, () => console.log('Backend API running on http://localhost:3000'));
-
+app.listen(3000, '0.0.0.0', () => console.log('Backend API running on http://0.0.0.0:3000'));
 
