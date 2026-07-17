@@ -6,11 +6,11 @@ let savedPosts = [];
 let showOnlyReminders = false;
 let currentGroup = "All"; // Add this
 
-const API_BASE_URL = "http://192.168.18.12:3000"; // Replace with your actual IP
+const API_BASE_URL = "haha"; // Replace with your actual IP
 // When the page loads, ask the backend for the saved posts
 window.onload = async () => {
     try {
-        const response = await fetch('http://192.168.18.12:3000/posts');
+        const response = await fetch('/posts');
         savedPosts = await response.json();
 
         // Render them on the screen
@@ -64,8 +64,8 @@ async function savePost(selectedGroup) {
     hideError();
 
     try {
-        const API_URL = 'http://192.168.18.12:3000'; // USE YOUR LAPTOP IP HERE
-        const response = await fetch(`${API_URL}/scrape`, {
+        const API_URL = ''; // USE YOUR LAPTOP IP HERE
+        const response = await fetch(`/scrape`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url, group }) // Send the group!
@@ -190,7 +190,7 @@ function updateHistory() {
 
 async function deletePost(id) {
     if (!confirm("Delete post?")) return;
-    await fetch(`http://192.168.18.12:3000/posts/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    await fetch(`/posts/${encodeURIComponent(id)}`, { method: 'DELETE' });
     savedPosts = savedPosts.filter(p => p.originalUrl !== id);
     renderAll(); // Assuming you have a renderAll function to refresh the UI
 }
@@ -225,7 +225,7 @@ function toggleReminderFilter() {
 async function toggleRemind(url) {
     const encodedUrl = encodeURIComponent(url);
     try {
-        const res = await fetch(`http://192.168.18.12:3000/posts/${encodedUrl}/remind`, { method: 'PUT' });
+        const res = await fetch(`/posts/${encodedUrl}/remind`, { method: 'PUT' });
         const data = await res.json();
 
         const post = savedPosts.find(p => p.originalUrl === url);
