@@ -135,5 +135,5 @@ app.put('/posts/:id/remind', (req, res) => {
     }
 });
 
-app.listen(3000, '0.0.0.0', () => console.log('Backend API running on http://0.0.0.0:3000'));
+app.listen(5700, '0.0.0.0', () => console.log('Backend API running on http://0.0.0.0:3000'));
 
