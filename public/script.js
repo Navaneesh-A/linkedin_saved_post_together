@@ -25,7 +25,9 @@ window.onload = async () => {
 // 2. VALIDATION LOGIC
 // ==========================================
 function isValidLinkedInUrl(url) {
-    const regex = /^(https?:\/\/)?(www\.)?linkedin\.com\/(posts|feed\/update|pulse|video)\/.+$/i;
+    //const regex = /^(https?:\/\/)?(www\.)?linkedin\.com\/(posts|feed\/update|pulse|video)|lnkd\.in)\/.+$/i;
+    const regex = /^(https?:\/\/)?(www\.)?(linkedin\.com\/(posts|feed\/update|pulse|video)|lnkd\.in)\/.+$/i;
+    
     return regex.test(url);
 }
 

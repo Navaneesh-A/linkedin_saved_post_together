@@ -63,7 +63,13 @@ app.post('/scrape', async (req, res) => {
         // 3. NOW you can safely read/scrape data
 
         const page = await browser.newPage();
-        await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+        // await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+        // 1. Navigate to the page and let it follow short link redirects
+        const response = await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+
+        // Capture the final expanded URL after redirection (e.g., lnkd.in -> linkedin.com/posts/...)
+        const resolvedurl = page.url();
+        console.log(resolvedurl);
         const scrapedData = await page.evaluate(() => {
             let author = document.querySelector('h1')?.innerText
                 || document.querySelector('.top-card-layout__title')?.innerText
@@ -97,7 +103,7 @@ app.post('/scrape', async (req, res) => {
             author: scrapedData.author,
             text: scrapedData.text,
             mediaUrl: scrapedData.mediaUrl,
-            originalUrl: url,
+            originalUrl: resolvedurl,
             group: group || "General",
             date: new Date().toISOString().split('T')[0],
             remind: false

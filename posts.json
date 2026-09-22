@@ -1,5 +1,32 @@
 [
   {
+    "author": "JavaScript Mastery’s Post",
+    "text": "\"I watched JS Mastery's video on 'The Engineering System for AI Agents' and mapped it out on Excalidraw. Sharing my notes.\" ~ Well done, Adarsh Singh! 🙌",
+    "mediaUrl": "https://media.licdn.com/dms/image/v2/D4D22AQGyEqfpckTgFg/feedshare-shrink_800/B4DaCvW95.GUAc-/0/1789648429466?e=2147483647&v=beta&t=brTHxxvMZtBFuPdTQro3QRxlMtQaf2TUI2I51WdnI94",
+    "originalUrl": "https://www.linkedin.com/posts/i-watched-js-masterys-video-on-the-engineering-share-7506699189716697088-yD_q/?utm_source=share&utm_medium=member_desktop&rcm=ACoAAFvSqGsBtRS2zqSDQuTOKQixSWHuvObTDTI",
+    "group": "All",
+    "date": "2026-09-22",
+    "remind": false
+  },
+  {
+    "author": "Prashant Rathi’s Post",
+    "text": "ML, simplified.\n\nMachine learning becomes much easier when you stop memorizing algorithms and start understanding what problem each one solves.\n\nHere are some of the most important ML algorithms to know:\n\n→ Linear Regression — predicts continuous values using a best-fit line\n→ Logistic Regression — predicts probabilities for classification problems\n→ Decision Tree — splits data into branches to make decisions\n→ Random Forest — combines multiple trees for stronger predictions\n→ Support Vector Machine — finds the best boundary between classes\n→ K-Nearest Neighbors — classifies points using nearby examples\n→ Naive Bayes — uses probability for fast classification\n\nThen come algorithms built for more complex patterns:\n\n→ Neural Networks — learn nonlinear relationships through connected layers\n→ Gradient Boosting — builds models sequentially to reduce errors\n→ XGBoost — optimized boosting for strong predictive performance\n\nFor unsupervised learning:\n\n→ K-Means — groups similar data into K clusters\n→ DBSCAN — finds dense clusters and identifies outliers\n→ Hierarchical Clustering — creates clusters in a tree-like structure\n→ PCA — reduces dimensions while preserving important information\n\nAnd for specialized problems:\n\n→ Apriori — finds frequent item combinations and association rules\n→ ARIMA — forecasts time-series data using historical patterns\n\nThe important part is knowing when to use what.\n\nBefore choosing an algorithm, ask:\n\n→ Is this classification, regression, clustering, or forecasting?\n→ How much data do I have?\n→ Is interpretability important?\n→ Do I need speed or maximum accuracy?\n→ Can the model handle noisy or high-dimensional data?\n\nYou do not need to master every algorithm at once.\n\nUnderstand the problem first, then choose the model that fits it best.",
+    "mediaUrl": "https://media.licdn.com/dms/image/v2/D4D22AQEIrOmbtlqRNg/feedshare-shrink_1280/B4DaDJMdEdHsAM-/0/1790081889290?e=2147483647&v=beta&t=Hcq0FdCZ45iEQNxM5gPmNxPkd0HnzT6AQD8UxUlMlNY",
+    "originalUrl": "https://www.linkedin.com/posts/prashantrathi1_ml-simplified-machine-learning-becomes-share-7508147633752793089-UK7I/?utm_source=share&utm_medium=member_desktop&rcm=ACoAAFvSqGsBtRS2zqSDQuTOKQixSWHuvObTDTI",
+    "group": "All",
+    "date": "2026-09-22",
+    "remind": false
+  },
+  {
+    "author": "Prashant Rathi’s Post",
+    "text": "20 GitHub repositories every AI engineer should bookmark.\n\nIf you’re learning LLMs, agents, RAG, model serving, deep learning, or multimodal AI, these repos are packed with practical code and examples:\n\n1. Transformers - https://lnkd.in/dJghpiNX \n2. GenAI for Beginners - https://lnkd.in/dPZt_8J5 \n3. LangChain - https://lnkd.in/dcyNG-vX \n4. LLMs from Scratch - https://lnkd.in/dzXTUiJG \n5. PyTorch - https://lnkd.in/dYsW89Ez \n6. ML for Beginners - https://lnkd.in/dVdj4rf7 \n7. OpenAI Cookbook - https://lnkd.in/dJyCs84z \n8. Stable Diffusion - https://lnkd.in/duzEMuiR \n9. AI for Beginners - https://lnkd.in/dUVswQ8t \n10. Segment Anything - https://lnkd.in/dHvVVcuH \n11. Claude Cookbooks - https://lnkd.in/dikvW_9R \n12. AutoGen - https://lnkd.in/dMANizQt \n13. LlamaIndex - https://lnkd.in/dF_K3XEC \n14. vLLM - https://lnkd.in/d72wmEeg \n15. CrewAI - https://lnkd.in/dCjt8cDh \n16. Diffusers - https://lnkd.in/dSXXTR6a \n17. LangGraph - https://lnkd.in/dnGmkJAb \n18. DSPy - https://lnkd.in/dj7ZZp3n \n19. Ollama - https://lnkd.in/d3CPTetN \n20. Open WebUI - https://lnkd.in/dPhhRM8P \n\nBonus: Fetch.ai uAgents - https://lnkd.in/dfH7g2s5 \n\nDon’t just star them. Clone one, run the examples, understand the architecture, and build something with it.\n\nWhich repo would you add?",
+    "mediaUrl": "https://media.licdn.com/dms/image/v2/D4D22AQFRT1AiE3GDQg/feedshare-shrink_800/B4DaDEEIIOLAAc-/0/1789995811825?e=2147483647&v=beta&t=ga_vawA2YLlLr8fq7P_SOw_39mCU4ucyWAUS8SZQNdY",
+    "originalUrl": "https://www.linkedin.com/feed/update/urn:li:activity:7507786599452004353?updateEntityUrn=urn%3Ali%3Afs_updateV2%3A%28urn%3Ali%3Aactivity%3A7507786599452004353%2CFEED_DETAIL%2CEMPTY%2CDEFAULT%2Cfalse%29",
+    "group": "All",
+    "date": "2026-09-22",
+    "remind": false
+  },
+  {
     "author": "Dhora Bhabbu Kth’s Post",
     "text": "🚀 LangChain: From Fundamentals to Production\nI’ve put together a complete LangChain learning roadmap covering the concepts that matter most for building real-world GenAI applications and preparing for interviews.\n📚 What’s covered:\n🔥 LangChain Fundamentals\n🧠 LLM & Chat Models\n📝 Prompt Engineering\n⛓️ LCEL & Runnables\n📚 RAG & Retrievers\n🤖 Agents & Tools\n💾 Memory & Conversation\n🌐 LangServe & API Integration\n📊 LangSmith & Observability\n🧪 LLM/RAG Evaluation\n🏗️ Production LangChain\n🔗 LangGraph & Agentic Workflows\n☁️ LangChain + AWS Bedrock\n🎯 Top LangChain Interview Questions\nThe goal isn’t just to learn the APIs—it’s to understand how these components fit together to build scalable, reliable, and production-ready GenAI applications.\nA good learning path is:\nLearn → Practice → Build → Evaluate → Deploy 🚀\nIf you're preparing for GenAI / LLM Engineer / AI Engineer roles, save this roadmap for revision.\nFollow @gen_ai_learning for more practical GenAI, RAG, LangChain, AWS Bedrock, and AI Engineering content.\n#LangChain #GenerativeAI #RAG #AWSBedrock #AIEngineering #LLM #LangGraph #GenAI",
     "mediaUrl": "https://media.licdn.com/dms/image/v2/D5622AQGwprN60X5Pvw/feedshare-shrink_1280/B56aB8ZncgHYAM-/0/1788793485385?e=2147483647&v=beta&t=E8Vre59GviwnBP_wft_I7zMn1oIxJxniVZxWspz5_3A",

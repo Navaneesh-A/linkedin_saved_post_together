@@ -3,7 +3,7 @@ module.exports = {
     name: "linkedin-app",
     script: "index.js",
     env: {
-      PORT: 5700
+      PORT: 3000
     }
   }]
 };
