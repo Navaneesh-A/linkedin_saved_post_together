@@ -3,3 +3,6 @@ node_modules/
 group.js
 adddate.js
 posts.json
+.env
+.env.*
+!.env.example

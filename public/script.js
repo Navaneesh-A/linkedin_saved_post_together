@@ -5,12 +5,46 @@ let savedPosts = [];
 // Add this line at the top of script.js
 let showOnlyReminders = false;
 let currentGroup = "All"; // Add this
-
-const API_BASE_URL = "haha"; // Replace with your actual IP
+const storedGuestScrapeCount = Number.parseInt(localStorage.getItem('guestScrapes') || '0', 10);
+let guestScrapeCount = Number.isNaN(storedGuestScrapeCount) ? 0 : storedGuestScrapeCount;
+let currentUser = null;
+let authInitialized = false;
 // When the page loads, ask the backend for the saved posts
 window.onload = async () => {
     try {
+        const configResponse = await fetch('/firebase-config');
+        const firebaseConfig = await configResponse.json();
+        if (!configResponse.ok) {
+            throw new Error(firebaseConfig.error || `Request failed: ${configResponse.status}`);
+        }
+        firebase.initializeApp(firebaseConfig);
+        window.auth = firebase.auth();
+        window.provider = new firebase.auth.GoogleAuthProvider();
+        window.auth.onAuthStateChanged(user => {
+            currentUser = user;
+            authInitialized = true;
+            document.getElementById('saveButton').disabled = false;
+            const userProfile = document.getElementById('userProfile');
+            if (user) {
+                document.getElementById('loginModal').style.display = 'none';
+                const dynamicLogo = document.getElementById('dynamicLogo');
+                dynamicLogo.src = user.photoURL || '';
+                dynamicLogo.style.display = user.photoURL ? 'block' : 'none';
+                const firstName = user.displayName?.trim().split(/\s+/)[0] || 'there';
+                document.getElementById('welcomeText').innerText = `Hi, ${firstName}!`;
+                userProfile.style.display = 'flex';
+            } else {
+                userProfile.style.display = 'none';
+            }
+        });
+    } catch (error) {
+        console.error("Could not initialize Firebase:", error);
+        showError(error.message || "Could not initialize sign-in.");
+    }
+
+    try {
         const response = await fetch('/posts');
+        if (!response.ok) throw new Error(`Request failed: ${response.status}`);
         savedPosts = await response.json();
 
         // Render them on the screen
@@ -60,26 +94,39 @@ async function savePost(selectedGroup) {
     //console.log(selectedGroup);
     const url = input.value.trim();
     const group = selectedGroup || "General";
+    if (!authInitialized) {
+        showError("Checking sign-in status. Please try again in a moment.");
+        return;
+    }
+    if (!currentUser && guestScrapeCount >= 1) {
+        showLoginModal("You've used your free guest scrape! Sign in to continue.");
+        return;
+    }
     if (!url) { showError("Please enter a URL."); return; }
     if (!isValidLinkedInUrl(url)) { showError("Invalid link. Please paste a valid LinkedIn post URL."); return; }
 
     hideError();
 
     try {
-        const API_URL = ''; // USE YOUR LAPTOP IP HERE
         const response = await fetch(`/scrape`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url, group }) // Send the group!
+            body: JSON.stringify({ url, group, save: Boolean(currentUser) })
         });
 
-
         const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || `Request failed: ${response.status}`);
+        }
 
-        // --- NEW: Update UI only (Backend already saved it to file) ---
-        savedPosts.unshift(data);
-        updateHistory();
-        // --------------------------------------------------------------
+        if (currentUser) {
+            savedPosts.unshift(data);
+            updateHistory();
+        } else {
+            guestScrapeCount++;
+            localStorage.setItem('guestScrapes', guestScrapeCount);
+            alert("Scraped as guest! Sign in to save this permanently.");
+        }
 
         confetti({
             particleCount: 150, spread: 80, origin: { y: 0.6 },
@@ -90,7 +137,30 @@ async function savePost(selectedGroup) {
         input.value = '';
     } catch (error) {
         console.error("Failed to fetch:", error);
-        showError("Cannot connect to backend. Is your Node server running?");
+        showError(error.message || "Cannot connect to backend. Is your Node server running?");
+    }
+}
+
+function showLoginModal(message) {
+    document.getElementById('modalText').innerText = message;
+    document.getElementById('loginModal').style.display = 'flex';
+}
+
+async function loginWithGoogle() {
+    try {
+        await window.auth.signInWithPopup(window.provider);
+    } catch (error) {
+        console.error("Google sign-in failed:", error);
+        showError(error.message || "Google sign-in failed.");
+    }
+}
+
+async function signOut() {
+    try {
+        await window.auth.signOut();
+    } catch (error) {
+        console.error("Google sign-out failed:", error);
+        showError(error.message || "Google sign-out failed.");
     }
 }
 
