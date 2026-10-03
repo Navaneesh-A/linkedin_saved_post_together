@@ -13,11 +13,24 @@
     <div class="max-w-3xl mx-auto">
         <h1 class="text-3xl font-bold mb-6 text-blue-600">LinkedIn Post Saver</h1>
 
-        <div id="userProfile" style="display:none;" class="items-center gap-3 mb-6">
-            <img id="dynamicLogo" alt="Google profile picture"
-                class="w-10 h-10 rounded-full border-2 border-blue-500">
-            <span id="welcomeText" class="font-bold text-gray-700"></span>
-            <button type="button" onclick="signOut()" class="text-sm text-red-500 hover:underline">Log Out</button>
+        <div class="flex justify-between items-center mb-6">
+            <div id="viewToggles" style="display:none;" class="flex gap-2">
+                <button id="myPostsTab" type="button" onclick="loadUserPosts()"
+                    class="bg-blue-500 text-white px-4 py-2 rounded-lg font-bold">My Saved Posts</button>
+                <button id="publicPostsTab" type="button" onclick="loadPublicPosts()"
+                    class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">Public Gallery</button>
+            </div>
+
+            <div id="authSection">
+                <button id="signInBtn" type="button" onclick="loginWithGoogle()"
+                    class="bg-blue-600 text-white px-4 py-2 rounded shadow">Sign in with Google</button>
+                <div id="userProfile" style="display:none;" class="items-center gap-3">
+                    <img id="dynamicLogo" alt="Google profile picture"
+                        class="w-10 h-10 rounded-full border-2 border-blue-500">
+                    <span id="welcomeText" class="font-bold text-gray-700"></span>
+                    <button type="button" onclick="signOut()" class="text-sm text-red-500 hover:underline">Log Out</button>
+                </div>
+            </div>
         </div>
 
         <div class="bg-white p-4 rounded-lg shadow mb-8 flex gap-4">

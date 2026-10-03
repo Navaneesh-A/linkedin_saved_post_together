@@ -3,6 +3,7 @@ const cors = require('cors');
 const puppeteer = require('puppeteer');
 const fs = require('fs'); // Built-in Node file system
 const path = require('path');
+const admin = require('firebase-admin');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
@@ -27,22 +28,126 @@ function getSavedPosts() {
 // Helper function to write to the database
 function savePostToDB(newPost) {
     let posts = getSavedPosts();
-    // Check if the post already exists by URL
     const exists = posts.find(p => p.originalUrl === newPost.originalUrl);
     if (!exists) {
         posts.unshift(newPost);
         fs.writeFileSync(dbPath, JSON.stringify(posts, null, 2));
+    } else {
+        exists.savedBy = [...new Set([...(exists.savedBy || []), exists.userId, ...newPost.savedBy].filter(Boolean))];
+        exists.isPublic = exists.isPublic !== false || newPost.isPublic;
+        delete exists.userId;
+        fs.writeFileSync(dbPath, JSON.stringify(posts, null, 2));
     }
-    if (!newPost.group) {
-        newPost.group = "General";
-    }
-
-
 }
 
-// --- NEW: Route to fetch history on page load ---
+function getFirebaseAdminAuth() {
+    if (!process.env.FIREBASE_PROJECT_ID) {
+        const error = new Error('FIREBASE_PROJECT_ID is required to verify Firebase sign-in.');
+        error.status = 503;
+        throw error;
+    }
+    if (!admin.apps.length) {
+        admin.initializeApp({
+            projectId: process.env.FIREBASE_PROJECT_ID
+        });
+    }
+    return admin.auth();
+}
+
+async function verifyFirebaseUser(req) {
+    const authorization = req.get('Authorization') || '';
+    const tokenMatch = authorization.match(/^Bearer\s+(.+)$/i);
+    if (!tokenMatch) {
+        const error = new Error('Sign-in is required to save or view user posts.');
+        error.status = 401;
+        throw error;
+    }
+    try {
+        return await getFirebaseAdminAuth().verifyIdToken(tokenMatch[1]);
+    } catch (error) {
+        if (!error.status && String(error.code || '').startsWith('auth/')) {
+            error.status = 401;
+        }
+        throw error;
+    }
+}
+
 app.get('/posts', (req, res) => {
-    res.json(getSavedPosts());
+    try {
+        const posts = getSavedPosts();
+        res.json(posts.filter(post => post.isPublic !== false));
+    } catch (error) {
+        console.error("Error fetching posts:", error);
+        res.status(500).json({ error: "Failed to fetch posts" });
+    }
+});
+
+app.get('/my-posts', async (req, res) => {
+    try {
+        const user = await verifyFirebaseUser(req);
+        const posts = getSavedPosts().filter(post =>
+            post.userId === user.uid || (post.savedBy || []).includes(user.uid)
+        );
+        res.json(posts);
+    } catch (error) {
+        console.error("Error fetching user posts:", error);
+        res.status(error.status || 500).json({
+            error: error.status === 401
+                ? error.message
+                : error.status === 503
+                    ? error.message
+                    : 'Could not verify sign-in.'
+        });
+    }
+});
+
+app.post('/my-posts', async (req, res) => {
+    try {
+        const user = await verifyFirebaseUser(req);
+        const { author, text, mediaUrl, originalUrl, group, date, remind } = req.body;
+        if (
+            typeof author !== 'string' ||
+            typeof text !== 'string' ||
+            typeof originalUrl !== 'string' ||
+            !author.trim() ||
+            !originalUrl.trim() ||
+            author.length > 300 ||
+            text.length > 10000
+        ) {
+            return res.status(400).json({ error: 'Guest scrape data is invalid.' });
+        }
+
+        let postUrl;
+        try {
+            postUrl = new URL(originalUrl);
+        } catch {
+            return res.status(400).json({ error: 'Guest scrape URL is invalid.' });
+        }
+        if (!['http:', 'https:'].includes(postUrl.protocol)) {
+            return res.status(400).json({ error: 'Guest scrape URL must use HTTP or HTTPS.' });
+        }
+
+        const savedPost = {
+            author: author.trim(),
+            text,
+            mediaUrl: typeof mediaUrl === 'string' ? mediaUrl : '',
+            originalUrl: postUrl.href,
+            group: typeof group === 'string' && group.trim() ? group.trim() : 'General',
+            date: typeof date === 'string' ? date : new Date().toISOString().split('T')[0],
+            remind: Boolean(remind),
+            savedBy: [user.uid],
+            isPublic: false
+        };
+        savePostToDB(savedPost);
+        res.status(201).json(savedPost);
+    } catch (error) {
+        console.error("Error saving guest scrape:", error);
+        res.status(error.status || 500).json({
+            error: error.status === 401 || error.status === 503
+                ? error.message
+                : 'Could not save guest scrape.'
+        });
+    }
 });
 
 app.get('/firebase-config', (req, res) => {
@@ -74,6 +179,15 @@ app.post('/scrape', async (req, res) => {
 
     let browser;
     try {
+        const user = save === true ? await verifyFirebaseUser(req) : null;
+        const adminEmail = (process.env.PUBLIC_GALLERY_ADMIN_EMAIL || '').trim().toLowerCase();
+        const isPublic = Boolean(
+            user &&
+            adminEmail &&
+            user.email_verified &&
+            user.email?.toLowerCase() === adminEmail
+        );
+
         browser = await puppeteer.launch({
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled', '--disable-dev-shm-usage']
@@ -128,16 +242,20 @@ app.post('/scrape', async (req, res) => {
             remind: false
         };
 
-        if (save) {
-            savePostToDB(finalPostData);
+        if (user) {
+            savePostToDB({
+                ...finalPostData,
+                savedBy: [user.uid],
+                isPublic
+            });
         }
 
-        res.json(finalPostData);
+        res.json({ ...finalPostData, isPublic });
 
     } catch (error) {
         if (browser) await browser.close();
         console.error("❌ Error:", error.message);
-        res.status(500).json({ error: error.message });
+        res.status(error.status || 500).json({ error: error.message });
     }
 });
 // Add these routes below your /scrape route // NEW FRICK

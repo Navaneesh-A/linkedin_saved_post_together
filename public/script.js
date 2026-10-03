@@ -9,6 +9,30 @@ const storedGuestScrapeCount = Number.parseInt(localStorage.getItem('guestScrape
 let guestScrapeCount = Number.isNaN(storedGuestScrapeCount) ? 0 : storedGuestScrapeCount;
 let currentUser = null;
 let authInitialized = false;
+let currentView = 'public';
+const guestPreviewStorageKey = 'guestScrapedPosts';
+let guestPreviewPosts = loadGuestPreviewPosts();
+
+function loadGuestPreviewPosts() {
+    try {
+        const posts = JSON.parse(localStorage.getItem(guestPreviewStorageKey) || '[]');
+        return Array.isArray(posts) ? posts : [];
+    } catch (error) {
+        console.error("Could not load guest scrapes from this browser:", error);
+        return [];
+    }
+}
+
+function persistGuestPreviewPosts() {
+    try {
+        localStorage.setItem(guestPreviewStorageKey, JSON.stringify(guestPreviewPosts));
+        return true;
+    } catch (error) {
+        console.error("Could not update guest scrapes in this browser:", error);
+        showError("The guest scrape is still available in this tab, but could not be stored for later.");
+        return false;
+    }
+}
 // When the page loads, ask the backend for the saved posts
 window.onload = async () => {
     try {
@@ -20,41 +44,124 @@ window.onload = async () => {
         firebase.initializeApp(firebaseConfig);
         window.auth = firebase.auth();
         window.provider = new firebase.auth.GoogleAuthProvider();
-        window.auth.onAuthStateChanged(user => {
+        window.auth.onAuthStateChanged(async user => {
             currentUser = user;
             authInitialized = true;
             document.getElementById('saveButton').disabled = false;
+            document.getElementById('signInBtn').style.display = user ? 'none' : 'inline-block';
+            document.getElementById('viewToggles').style.display = user ? 'flex' : 'none';
             const userProfile = document.getElementById('userProfile');
             if (user) {
                 document.getElementById('loginModal').style.display = 'none';
+                currentView = 'user';
+                setActivePostsTab();
                 const dynamicLogo = document.getElementById('dynamicLogo');
                 dynamicLogo.src = user.photoURL || '';
                 dynamicLogo.style.display = user.photoURL ? 'block' : 'none';
                 const firstName = user.displayName?.trim().split(/\s+/)[0] || 'there';
                 document.getElementById('welcomeText').innerText = `Hi, ${firstName}!`;
                 userProfile.style.display = 'flex';
+                if (await saveGuestScrapesForUser(user)) {
+                    await loadUserPosts();
+                } else {
+                    renderAll();
+                }
             } else {
                 userProfile.style.display = 'none';
+                loadPublicPosts();
             }
         });
+        document.getElementById('signInBtn').disabled = false;
     } catch (error) {
         console.error("Could not initialize Firebase:", error);
         showError(error.message || "Could not initialize sign-in.");
-    }
-
-    try {
-        const response = await fetch('/posts');
-        if (!response.ok) throw new Error(`Request failed: ${response.status}`);
-        savedPosts = await response.json();
-
-        // Render them on the screen
-        // We reverse it so the newest stays at the top of the feed
-        savedPosts.slice().reverse().forEach(post => renderPost(post));
-        updateHistory();
-    } catch (error) {
-        console.error("Could not load history from backend:", error);
+        loadPublicPosts();
     }
 };
+
+async function saveGuestScrapesForUser(user) {
+    for (const post of [...guestPreviewPosts]) {
+        try {
+            const response = await fetch('/my-posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${await user.getIdToken()}`
+                },
+                body: JSON.stringify(post)
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || `Request failed: ${response.status}`);
+            }
+
+            guestPreviewPosts = guestPreviewPosts.filter(
+                guestPost => guestPost.originalUrl !== post.originalUrl
+            );
+            persistGuestPreviewPosts();
+        } catch (error) {
+            console.error("Could not save guest scrape to your account:", error);
+            showError(`Your guest scrape is still saved in this browser but could not be added to your account: ${error.message}`);
+            return false;
+        }
+    }
+    return true;
+}
+
+async function retryPendingGuestSaves() {
+    if (!currentUser) return;
+    if (await saveGuestScrapesForUser(currentUser)) {
+        await loadUserPosts();
+    } else {
+        renderAll();
+    }
+}
+
+async function loadUserPosts() {
+    if (!currentUser) return;
+    currentView = 'user';
+    setActivePostsTab();
+    await fetchPosts('/my-posts', true);
+}
+
+async function loadPublicPosts() {
+    currentView = 'public';
+    setActivePostsTab();
+    await fetchPosts('/posts?type=public');
+}
+
+async function fetchPosts(url, includeAuth = false) {
+    try {
+        const headers = {};
+        if (includeAuth) {
+            if (!currentUser) return;
+            headers.Authorization = `Bearer ${await currentUser.getIdToken()}`;
+        }
+        const response = await fetch(url, { headers });
+        const posts = await response.json();
+        if (!response.ok) {
+            throw new Error(posts.error || `Request failed: ${response.status}`);
+        }
+        savedPosts = posts;
+        renderAll();
+    } catch (error) {
+        console.error("Could not load posts:", error);
+        showError(error.message || "Could not load posts.");
+    }
+}
+
+function setActivePostsTab() {
+    const myPostsTab = document.getElementById('myPostsTab');
+    const publicPostsTab = document.getElementById('publicPostsTab');
+    if (!myPostsTab || !publicPostsTab) return;
+
+    myPostsTab.className = currentView === 'user'
+        ? 'bg-blue-500 text-white px-4 py-2 rounded-lg font-bold'
+        : 'bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300';
+    publicPostsTab.className = currentView === 'public'
+        ? 'bg-blue-500 text-white px-4 py-2 rounded-lg font-bold'
+        : 'bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300';
+}
 // ==========================================
 // 2. VALIDATION LOGIC
 // ==========================================
@@ -108,10 +215,18 @@ async function savePost(selectedGroup) {
     hideError();
 
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (currentUser) {
+            headers.Authorization = `Bearer ${await currentUser.getIdToken()}`;
+        }
         const response = await fetch(`/scrape`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url, group, save: Boolean(currentUser) })
+            headers,
+            body: JSON.stringify({
+                url,
+                group,
+                save: Boolean(currentUser)
+            })
         });
 
         const data = await response.json();
@@ -119,12 +234,14 @@ async function savePost(selectedGroup) {
             throw new Error(data.error || `Request failed: ${response.status}`);
         }
 
-        if (currentUser) {
+        if (currentUser && (currentView === 'user' || data.isPublic)) {
             savedPosts.unshift(data);
-            updateHistory();
-        } else {
+        }
+        if (!currentUser) {
             guestScrapeCount++;
             localStorage.setItem('guestScrapes', guestScrapeCount);
+            guestPreviewPosts.unshift(data);
+            persistGuestPreviewPosts();
             alert("Scraped as guest! Sign in to save this permanently.");
         }
 
@@ -133,7 +250,7 @@ async function savePost(selectedGroup) {
             colors: ['#0A66C2', '#FFFFFF', '#F8C77E']
         });
 
-        renderPost(data);
+        renderAll();
         input.value = '';
     } catch (error) {
         console.error("Failed to fetch:", error);
@@ -171,8 +288,7 @@ async function signOut() {
 
 // --- 1. Add this NEW helper function ---
 
-function renderPost(data) {
-    const container = document.getElementById('postsContainer');
+function renderPost(data, targetContainer = document.getElementById('postsContainer')) {
     const uniqueId = 'post-' + Date.now() + Math.floor(Math.random() * 1000);
 
     // 1. Normalize the text: 
@@ -189,13 +305,22 @@ function renderPost(data) {
     const shortHTML = shortText.replace(/\n/g, '<br>');
     const longHTML = cleanText.replace(/\n/g, '<br>');
 
+    const pendingSaveNotice = data.pendingGuestSave
+        ? `<p class="mb-3 text-sm text-amber-700">This guest scrape is waiting to be saved to your account.
+            <button type="button" onclick="retryPendingGuestSaves()" class="ml-1 font-bold text-blue-600 underline">Retry save</button>
+        </p>`
+        : '';
+    const reminderButton = data.pendingGuestSave
+        ? ''
+        : `<button onclick="toggleRemind('${data.originalUrl}')"
+            class="text-xl ${data.remind ? 'text-yellow-500' : 'text-gray-300'}">
+            🔔
+        </button>`;
     const postHTML = `
         <div class="bg-white p-6 rounded-lg shadow">
+            ${pendingSaveNotice}
             <h3 class="font-bold text-lg mb-4 text-gray-900">${data.author}</h3>
-<button onclick="toggleRemind('${data.originalUrl}')" 
-    class="text-xl ${data.remind ? 'text-yellow-500' : 'text-gray-300'}">
-    🔔
-</button>
+${reminderButton}
 <p class="text-xs text-gray-500 mt-2">Saved on: ${data.date || 'Unknown'}</p>
             ${renderMedia(data)}
             <div class="mt-4 text-gray-800 leading-relaxed text-sm whitespace-pre-wrap">
@@ -207,7 +332,7 @@ function renderPost(data) {
         </div>
 
     `;
-    container.insertAdjacentHTML('afterbegin', postHTML);
+    targetContainer.insertAdjacentHTML('afterbegin', postHTML);
 }
 
 
@@ -249,10 +374,10 @@ function renderMedia(data) {
 
 // --- NEW: History & Reminder Logic --- FRICK NEW
 
-function updateHistory() {
+function updateHistory(posts = savedPosts) {
     const container = document.getElementById('historyContainer');
     if (!container) return;
-    container.innerHTML = savedPosts.map(post => `
+    container.innerHTML = posts.map(post => `
         <li class="p-3 bg-gray-50 rounded flex justify-between items-center mb-2">
             <span class="truncate text-sm w-3/4">${post.author}</span>
             <button onclick="deletePost('${post.originalUrl}')" class="text-red-600">🗑️</button>
@@ -276,15 +401,46 @@ async function deletePost(id) {
 function renderAll() {
     const container = document.getElementById('postsContainer');
     container.innerHTML = '';
-    // This is the logic that respects your FAV filter
-    //let displayPosts = showOnlyReminders ? savedPosts.filter(p => p.remind) : savedPosts;
-    let displayPosts = savedPosts.filter(p =>
+    const postsForView = !currentUser
+        ? [...guestPreviewPosts, ...savedPosts]
+        : currentView === 'user'
+            ? [...guestPreviewPosts.map(post => ({ ...post, pendingGuestSave: true })), ...savedPosts]
+            : savedPosts;
+    const displayPosts = postsForView.filter(p =>
         (showOnlyReminders ? p.remind : true) &&
         (currentGroup === "All" ? true : p.group === currentGroup)
     );
 
-    displayPosts.slice().reverse().forEach(post => renderPost(post));
-    updateHistory();
+    const guestVisiblePosts = currentView === 'public' && !currentUser
+        ? displayPosts.slice(0, 5)
+        : displayPosts;
+    guestVisiblePosts.slice().reverse().forEach(post => renderPost(post, container));
+
+    const lockedPosts = currentView === 'public' && !currentUser
+        ? displayPosts.slice(5)
+        : [];
+    if (lockedPosts.length) {
+        const lockedSheet = document.createElement('section');
+        lockedSheet.className = 'relative col-span-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg';
+        lockedSheet.innerHTML = `
+            <div class="grid grid-cols-1 gap-6 p-6 blur-sm select-none pointer-events-none" aria-hidden="true"></div>
+            <div class="absolute inset-0 flex items-center justify-center bg-white/60 p-6 text-center">
+                <div class="rounded-xl bg-white p-6 shadow-lg">
+                    <h2 class="mb-2 text-xl font-bold text-gray-900">Want to see more?</h2>
+                    <p class="mb-4 text-gray-700">Sign in with Google to browse the full public gallery.</p>
+                    <button type="button" onclick="loginWithGoogle()"
+                        class="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
+                        Sign in with Google
+                    </button>
+                </div>
+            </div>
+        `;
+        const blurredGrid = lockedSheet.firstElementChild;
+        lockedPosts.slice().reverse().forEach(post => renderPost(post, blurredGrid));
+        container.appendChild(lockedSheet);
+    }
+
+    updateHistory(currentUser ? savedPosts : guestVisiblePosts);
 }
 
 // --- ACTIVATED: Filter Toggle ---

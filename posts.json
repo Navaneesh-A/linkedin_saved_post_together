@@ -1,5 +1,18 @@
 [
   {
+    "author": "HTTP Status Codes Explained",
+    "text": "🌐 The Language of HTTP\n\nHTTP status codes are how servers tell clients what happened to their request. They are three-digit numbers that indicate success, failure, or the need for further action.\n\n---\n\n🔄 1xx – Informational\n\n\"Hold on, we're still working on it.\"\n\n• 100 - Continue\n• 101 - Switching Protocols\n\n---\n\n✅ 2xx – Success\n\n\"Everything worked exactly as expected.\"\n\n• 200 - OK\n• 201 - Created\n• 202 - Accepted\n• 204 - No Content\n• 206 - Partial Content\n\n---\n\n↪️ 3xx – Redirection\n\n\"What you're looking for is over there.\"\n\n• 301 - Moved Permanently\n• 302 - Found\n• 303 - See Other\n• 304 - Not Modified\n• 307 - Temporary Redirect\n• 308 - Permanent Redirect\n\n---\n\n❌ 4xx – Client Errors\n\n\"You might have made a mistake.\"\n\n• 400 - Bad Request\n• 401 - Unauthorized\n• 403 - Forbidden\n• 404 - Not Found\n• 405 - Method Not Allowed\n• 409 - Conflict\n• 410 - Gone\n• 413 - Payload Too Large\n• 415 - Unsupported Media Type\n• 422 - Unprocessable Content\n• 429 - Too Many Requests\n\n---\n\n🔥 5xx – Server Errors\n\n\"Something went wrong on our side.\"\n\n• 500 - Internal Server Error\n• 501 - Not Implemented\n• 502 - Bad Gateway\n• 503 - Service Unavailable\n• 504 - Gateway Timeout \n\n---\n\nIf you found this guide helpful, follow TheDevSpace | Dev Roadmap, w3schools.com, and JavaScript Mastery for more tips, tutorials, and cheat sheets on web development.\n\n🎯 𝗙𝘂𝗹𝗹 𝗦𝘁𝗮𝗰𝗸 𝗔𝗜 𝗗𝗲𝘃𝗲𝗹𝗼𝗽𝗲𝗿 𝗥𝗼𝗮𝗱𝗺𝗮𝗽 → https://buff.ly/26wf93a",
+    "mediaUrl": "https://media.licdn.com/dms/image/v2/D4D10AQEdK0rxKJALcg/image-shrink_1280/B4DaDxtPGnHsAg-/0/1790761562949?e=2147483647&v=beta&t=fie_2H32n7W5veZrJDllnRQoHOfn7HZO_gnO7_6R6sA",
+    "originalUrl": "https://www.linkedin.com/posts/eric-hu-4b9886141_the-language-of-http-http-status-codes-share-7510998469856280576-s3F1/?utm_source=share&utm_medium=member_desktop&rcm=ACoAAFvSqGsBtRS2zqSDQuTOKQixSWHuvObTDTI",
+    "group": "All",
+    "date": "2026-10-03",
+    "remind": false,
+    "savedBy": [
+      "2P0gvL3wECPOxjvK4bMuwdm2Tji1"
+    ],
+    "isPublic": true
+  },
+  {
     "author": "LinkedIn User",
     "text": "So we got a periodic table of HTML elements before HTML 6. 😂\n\nIt's basically a visual cheat sheet that organizes HTML elements like a periodic table, so you can quickly see what each element does and how they're categorized.\n\nWhat a great way to learn and explore HTML... Wish I had this back when I first learned HTML :)\n\nSource 🔗: https://lnkd.in/gStU-JeC\n\nFollow Ram for more amazing AI, Coding & Web Dev insights 💎",
     "mediaUrl": "https://dms.licdn.com/playlist/vid/v2/D5605AQEpHduDiZGaEg/thumbnail-with-play-button-overlay-high/B56aDndU5DIwC0-/0/1790589623703?e=2147483647&v=beta&t=7vpOKccjYs8QMi6aBbZUe1t2yjg4pDf7BJ0ShJi1myQ",
